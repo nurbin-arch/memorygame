@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Memory Card Game</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #f0f4f8;
+      text-align: center;
+      padding: 20px;
+    }
+
+    h1 {
+      color: #333;
+    }
+
+    .controls {
+      margin: 20px 0;
+    }
+
+    .controls button, .controls select {
+      margin: 5px;
+      padding: 10px 15px;
+      font-size: 1rem;
+      border-radius: 6px;
+      border: none;
+      background-color: #4f46e5;
+      color: white;
+      cursor: pointer;
+    }
+
+    .info {
+      margin-top: 10px;
+      font-size: 1.1rem;
+      color: #333;
+    }
+
+    .game-board {
+      display: grid;
+      gap: 15px;
+      justify-content: center;
+      margin-top: 20px;
+    }
+
+    .card {
+      width: 80px;
+      height: 80px;
+      background-color: #4f46e5;
+      color: white;
+      font-size: 2rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      border-radius: 10px;
+      transition: transform 0.3s;
+      user-select: none;
+    }
+
+    .card.flipped {
+      background-color: #fff;
+      color: #4f46e5;
+      border: 2px solid #4f46e5;
+      transform: rotateY(180deg);
+      cursor: default;
+    }
+  </style>
+</head>
+<body>
+  <h1>🧠 Memory Card Game</h1>
+
+  <div class="controls">
+    <label for="difficulty">Level: </label>
+    <select id="difficulty">
+      <option value="easy">Easy (4 Pairs)</option>
+      <option value="medium" selected>Medium (6 Pairs)</option>
+      <option value="hard">Hard (8 Pairs)</option>
+    </select>
+    <button onclick="restartGame()">🔁 Restart</button>
+    <div class="info">
+      Moves: <span id="moves">0</span> | Time: <span id="timer">0</span>s
+    </div>
+  </div>
+
+  <div class="game-board" id="game-board"></div>
+
+  <script>
+    const emojiSet = ['🍎', '🍌', '🍇', '🍓', '🍉', '🍒', '🥝', '🍍'];
+    let gameBoard, movesDisplay, timerDisplay;
+    let flippedCards = [], matched = 0, moves = 0, timer, seconds = 0, totalPairs = 6;
+
+    function shuffle(array) {
+      return array.sort(() => 0.5 - Math.random());
+    }
+
+    function startTimer() {
+      clearInterval(timer);
+      seconds = 0;
+      timer = setInterval(() => {
+        seconds++;
+        timerDisplay.textContent = seconds;
+      }, 1000);
+    }
+
+    function stopTimer() {
+      clearInterval(timer);
+    }
+
+    function restartGame() {
+      const difficulty = document.getElementById('difficulty').value;
+      if (difficulty === 'easy') totalPairs = 4;
+      else if (difficulty === 'medium') totalPairs = 6;
+      else totalPairs = 8;
+
+      const emojis = shuffle([...emojiSet].slice(0, totalPairs).flatMap(e => [e, e]));
+      const boardSize = Math.ceil(Math.sqrt(emojis.length));
+      gameBoard.innerHTML = '';
+      gameBoard.style.gridTemplateColumns = `repeat(${boardSize}, 80px)`;
+
+      matched = 0;
+      moves = 0;
+      flippedCards = [];
+      movesDisplay.textContent = '0';
+      timerDisplay.textContent = '0';
+      startTimer();
+
+      emojis.forEach((emoji, index) => {
+        const card = document.createElement('div');
+        card.classList.add('card');
+        card.dataset.emoji = emoji;
+        card.dataset.index = index;
+        card.innerText = '';
+        card.addEventListener('click', flipCard);
+        gameBoard.appendChild(card);
+      });
+    }
+
+    function flipCard() {
+      if (this.classList.contains('flipped') || flippedCards.length === 2) return;
+
+      this.innerText = this.dataset.emoji;
+      this.classList.add('flipped');
+      flippedCards.push(this);
+
+      if (flippedCards.length === 2) {
+        moves++;
+        movesDisplay.textContent = moves;
+        const [first, second] = flippedCards;
+        if (first.dataset.emoji === second.dataset.emoji) {
+          matched++;
+          flippedCards = [];
+          if (matched === totalPairs) {
+            stopTimer();
+            setTimeout(() => alert(`🎉 You Win! Moves: ${moves}, Time: ${seconds}s`), 300);
+          }
+        } else {
+          setTimeout(() => {
+            first.innerText = '';
+            second.innerText = '';
+            first.classList.remove('flipped');
+            second.classList.remove('flipped');
+            flippedCards = [];
+          }, 700);
+        }
+      }
+    }
+
+    window.onload = () => {
+      gameBoard = document.getElementById('game-board');
+      movesDisplay = document.getElementById('moves');
+      timerDisplay = document.getElementById('timer');
+      restartGame();
+    };
+  </script>
+</body>
+</html>
